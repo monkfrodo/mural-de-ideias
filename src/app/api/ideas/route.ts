@@ -1,12 +1,13 @@
 import { Client } from "@notionhq/client";
 import { NextResponse } from "next/server";
 
-const notion = new Client({ auth: process.env.NOTION_TOKEN });
-const dataSourceId = process.env.NOTION_DATASOURCE_ID!;
-const databaseId = process.env.NOTION_DATABASE_ID!;
+// Read env at request time: on Cloudflare Workers process.env is only populated per request.
+const getNotion = () => new Client({ auth: process.env.NOTION_TOKEN?.trim() });
 
 export async function GET() {
   try {
+    const notion = getNotion();
+    const dataSourceId = process.env.NOTION_DATASOURCE_ID!.trim();
     const response = await notion.dataSources.query({
       data_source_id: dataSourceId,
       sorts: [{ timestamp: "created_time", direction: "descending" }],
@@ -30,6 +31,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const notion = getNotion();
+    const databaseId = process.env.NOTION_DATABASE_ID!.trim();
     const { name, message, color, rotation } = await request.json();
 
     if (!name?.trim() || !message?.trim()) {
